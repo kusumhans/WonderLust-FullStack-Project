@@ -3,9 +3,11 @@ const mongoose = require("mongoose");
 const app = express();
 const Listing = require("./model/listing.js");
 const ejs = require("ejs");
+const path = require("path")
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
+app.use(express.urlencoded({extended: true}));
 
 const MONGO_URL = "mongodb://127.0.0.1:27017/wanderLust";
 
@@ -39,6 +41,23 @@ app.get("/listing", async(req, res) => {
     const allListing = await Listing.find({});
     console.log(allListing)
     res.render("listing/showlisting", { allListing })
+})
+// show individual listing info
+app.get("/listing/:id", async(req, res) => {
+try{
+    let { id } = req.params;
+    let listing =  await Listing.findById(id);
+    console.log("ID:", id);
+    console.log("Listing:", listing);
+    if (!listing) {
+        return res.status(404).send("Listing not found");
+    }
+
+    res.render("listing/show", { listing });
+} catch (err) {
+    console.log(err);
+    res.status(500).send("Something went wrong");
+}
 })
 
 app.listen(8080 , (req, res) => {
