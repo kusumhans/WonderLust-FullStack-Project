@@ -42,24 +42,33 @@ app.get("/listing", async(req, res) => {
     console.log(allListing)
     res.render("listing/showlisting", { allListing })
 })
+// add new listing 
+app.get("/listing/new", (req, res) => {
+    res.render("listing/listingnew")
+});
+app.post("/listing", async(req, res) => {
+    let listing = new Listing(req.body);
+    await listing.save();
+    res.redirect("/listing");
+})
 // show individual listing info
 app.get("/listing/:id", async(req, res) => {
-try{
-    let { id } = req.params;
-    let listing =  await Listing.findById(id);
-    console.log("ID:", id);
-    console.log("Listing:", listing);
-    if (!listing) {
-        return res.status(404).send("Listing not found");
+    try{
+        let { id } = req.params;
+        let listing =  await Listing.findById(id);
+        console.log("ID:", id);
+        console.log("Listing:", listing);
+        if (!listing) {
+            return res.status(404).send("Listing not found");
+        }
+    
+        res.render("listing/show", { listing });
+    } catch (err) {
+        console.log(err);
+        res.status(500).send("Something went wrong");
     }
-
-    res.render("listing/show", { listing });
-} catch (err) {
-    console.log(err);
-    res.status(500).send("Something went wrong");
-}
-})
-
+    })  
+// start server
 app.listen(8080 , (req, res) => {
     console.log("start listening port 8080");
 })
