@@ -5,12 +5,15 @@ const Listing = require("./model/listing.js");
 const ejs = require("ejs");
 const path = require("path")
 const methodOverride = require("method-override");
+const ejsmate = require("ejs-mate");
 
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 app.use(express.urlencoded({extended: true}));
 app.use(methodOverride("_method"));
+app.engine("ejs", ejsmate);
+app.use(express.static(path.join(__dirname, "public")));
 
 const MONGO_URL = "mongodb://127.0.0.1:27017/wanderLust";
 
@@ -40,52 +43,64 @@ app.get("/", (req, res) => {
     res.send("hello");
 })
 // listen route
-app.get("/listing", async(req, res) => {
-    const allListing = await Listing.find({});
-    console.log(allListing)
-    res.render("listing/showlisting", { allListing })
-})
-// add new listing 
+// New listing
 app.get("/listing/new", (req, res) => {
-    res.render("listing/listingnew")
+    res.render("listing/listingnew.ejs");
 });
-app.post("/listing", async(req, res) => {
+
+// Create listing
+app.post("/listing", async (req, res) => {
     let listing = new Listing(req.body);
     await listing.save();
-    res.redirect("/listing");
-})
-// show individual listing info
-app.get("/listing/:id", async(req, res) => {
-    try{
-        let { id } = req.params;
-        let listing =  await Listing.findById(id);
-        console.log("ID:", id);
-        console.log("Listing:", listing);
-        if (!listing) {
-            return res.status(404).send("Listing not found");
-        }
-    
-        res.render("listing/show", { listing });
-    } catch (err) {
-        console.log(err);
-        res.status(500).send("Something went wrong");
-    }
-    })  
-    // edit route
-    app.get('/listing/:id/edit', async(req,res) => {
-        let { id } = req.params;
 
-        let listing = await Listing.findById(id);
-        res.render("listing/listingedit.ejs", { listing })
-    })
-   app.put("/listing/:id", async(req,res) => {
+    res.redirect("/listing");
+});
+
+// Edit page
+app.get("/listing/:id/edit", async (req, res) => {
     let { id } = req.params;
+
+    let listing = await Listing.findById(id);
+
+    res.render("listing/listingedit.ejs", { listing });
+});
+
+// Update
+app.put("/listing/:id", async (req, res) => {
+    let { id } = req.params;
+
     await Listing.findByIdAndUpdate(id, req.body, {
         runValidators: true,
         new: true
-    })
+    });
+
     res.redirect(`/listing/${id}`);
-   })
+});
+
+// Delete
+app.delete("/listing/:id", async (req, res) => {
+    let { id } = req.params;
+
+    await Listing.findByIdAndDelete(id);
+
+    res.redirect("/listing");
+});
+
+// Show individual listing
+app.get("/listing/:id", async (req, res) => {
+    let { id } = req.params;
+
+    let listing = await Listing.findById(id);
+
+    res.render("listing/show.ejs", { listing });
+});
+
+// Show all listings
+app.get("/listing", async (req, res) => {
+    let allListing = await Listing.find();
+
+    res.render("listing/showlisting.ejs", { allListing });
+}); 
 // start server
 app.listen(8080 , (req, res) => {
     console.log("start listening port 8080");
